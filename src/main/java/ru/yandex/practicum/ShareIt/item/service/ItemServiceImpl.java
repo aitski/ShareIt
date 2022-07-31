@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.ShareIt.exception.NotFoundException;
 import ru.yandex.practicum.ShareIt.item.model.Item;
 import ru.yandex.practicum.ShareIt.item.storage.ItemStorage;
+import ru.yandex.practicum.ShareIt.user.model.User;
 import ru.yandex.practicum.ShareIt.user.storage.UserStorage;
 
 import java.util.Collections;
@@ -24,7 +25,10 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public List<Item> getAll(long ownerId) {
         validateUser(ownerId);
-        return itemStorage.getAll();
+        return itemStorage.getAll()
+                .stream()
+                .filter(item -> item.getOwner().getId() == ownerId)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -34,13 +38,18 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Item create(Item item) {
-        validateUser(item.getOwnerId());
+    public Item create(Item item, long ownerId) {
+        User owner = userStorage.findById(ownerId)
+                .orElseThrow(() -> new NotFoundException
+                        ("User with id=" + ownerId + " not found"));
+        item.setOwner(owner);
         return itemStorage.create(item);
     }
 
     @Override
     public Item update(Item item) {
+
+        validateUser(item.getOwner().getId());
         return itemStorage.update(item);
     }
 
@@ -59,15 +68,16 @@ public class ItemServiceImpl implements ItemService {
         return Collections.emptyList();
     }
 
-    public void validateUser(long userId) {
+    private void validateUser(long userId) {
         userStorage.findById(userId)
                 .orElseThrow(() -> new NotFoundException
                         ("User with id=" + userId + " not found"));
     }
 
-    public void validateOwnership(Item item, long userId) {
+    @Override
+    public void validateOwnership(long itemOwnerId, long userId) {
 
-        if (item.getOwnerId() != userId) {
+        if (itemOwnerId != userId) {
             throw new NotFoundException
                     ("Item does not belong to user");
         }

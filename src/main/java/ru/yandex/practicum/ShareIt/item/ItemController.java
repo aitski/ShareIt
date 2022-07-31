@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.ShareIt.item.model.Item;
 import ru.yandex.practicum.ShareIt.item.model.ItemDto;
-import ru.yandex.practicum.ShareIt.item.service.ItemServiceImpl;
+import ru.yandex.practicum.ShareIt.item.service.ItemService;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -15,81 +15,45 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ItemController {
 
-    private final ItemServiceImpl itemServiceImpl;
-    boolean needUpdate = false;
+    private final ItemService itemService;
+    private final ItemMapper itemMapper;
 
     @GetMapping
-    public List<ItemDto> items(@RequestHeader ("X-Sharer-User-Id") long ownerId) {
+    public List<ItemDto> items(@RequestHeader("X-Sharer-User-Id") long ownerId) {
 
-        return itemServiceImpl.getAll(ownerId)
+        return itemService.getAll(ownerId)
                 .stream()
-                .filter(item -> item.getOwnerId() == ownerId)
-                .map(this::convertToDto)
+                .map(itemMapper::convertToDto)
                 .collect(Collectors.toList());
     }
 
     @GetMapping("{itemId}")
     public ItemDto getById(@PathVariable long itemId) {
-        return convertToDto(itemServiceImpl.getById(itemId));
+        return itemMapper.convertToDto(itemService.getById(itemId));
     }
 
     @PostMapping
     public Item create(@Valid @RequestBody Item item,
-                       @RequestHeader ("X-Sharer-User-Id") long ownerId) {
+                       @RequestHeader("X-Sharer-User-Id") long ownerId) {
 
-        item.setOwnerId(ownerId);
-        return itemServiceImpl.create(item);
+        return itemService.create(item, ownerId);
     }
 
     @PatchMapping("{itemId}")
     public Item update(@Valid @RequestBody ItemDto itemDto,
-                       @RequestHeader ("X-Sharer-User-Id") long ownerId,
+                       @RequestHeader("X-Sharer-User-Id") long ownerId,
                        @PathVariable long itemId) {
 
-        Item item = convertFromDto(itemDto,itemId,ownerId);
+        Item item = itemService.getById(itemId);
+        itemService.validateOwnership(item.getOwner().getId(), ownerId);
 
-        if (needUpdate) {
-            return itemServiceImpl.update(item);
-        }
-        return itemServiceImpl.getById(itemId);
+        return itemService.update(itemMapper.convertFromDto(item, itemDto));
     }
 
     @GetMapping("search")
     public List<ItemDto> search(@RequestParam String text) {
-        return itemServiceImpl.search(text).stream().map(this::convertToDto)
+        return itemService.search(text).stream().map(itemMapper::convertToDto)
                 .collect(Collectors.toList());
-    }
-
-    public ItemDto convertToDto(Item item) {
-        return new ItemDto(
-                item.getId(),
-                item.getName(),
-                item.getDescription(),
-                item.getAvailable()
-        );
-    }
-
-    public Item convertFromDto(ItemDto itemDto, long itemId, long ownerId) {
-
-        itemServiceImpl.validateUser(ownerId);
-        itemServiceImpl.validateOwnership(itemServiceImpl.getById(itemId),ownerId);
-
-        Item item = itemServiceImpl.getById(itemId);
-
-        if (itemDto.getName()!=null){
-            item.setName(itemDto.getName());
-            needUpdate=true;
-        }
-        if (itemDto.getDescription()!=null){
-            item.setDescription(itemDto.getDescription());
-            needUpdate=true;
-        }
-        if (itemDto.getAvailable()!=null){
-            item.setAvailable(itemDto.getAvailable());
-            needUpdate=true;
-        }
-
-        return item;
     }
 
 }

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.ShareIt.user.model.User;
 import ru.yandex.practicum.ShareIt.user.model.UserDto;
-import ru.yandex.practicum.ShareIt.user.service.UserServiceImpl;
+import ru.yandex.practicum.ShareIt.user.service.UserService;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -15,62 +15,40 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserServiceImpl userServiceImpl;
+    private final UserService userService;
+    private final UserMapper userMapper;
     boolean needUpdate = false;
 
     @GetMapping
     public List<UserDto> users() {
-        return userServiceImpl.getAll().stream()
-                .map(this::convertToDto)
+        return userService.getAll().stream()
+                .map(userMapper::convertToDto)
                 .collect(Collectors.toList());
     }
 
     @GetMapping("{id}")
     public UserDto getById(@PathVariable long id) {
-        return convertToDto(userServiceImpl.getById(id));
+        return userMapper.convertToDto(userService.getById(id));
     }
 
     @PostMapping
     public User create(@Valid @RequestBody User user) {
-        return userServiceImpl.create(user);
+
+        return userService.create(user);
     }
 
     @PatchMapping("{userId}")
     public User update(@Valid @RequestBody UserDto userDto,
                        @PathVariable long userId) {
 
-        User user = convertFromDto(userDto, userId);
-        if (needUpdate) {
-            return userServiceImpl.update(user);
-        }
-        return userServiceImpl.getById(userId);
+        User user = userService.getById(userId);
+        userService.validateEmailExists(userDto.getEmail());
+        return userService.update(userMapper.convertFromDto(user,userDto));
     }
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable long id) {
-        userServiceImpl.delete(id);
+        userService.delete(id);
     }
 
-    private UserDto convertToDto(User user) {
-        return new UserDto(
-                user.getId(),
-                user.getName(),
-                user.getEmail()
-        );
-    }
-
-    private User convertFromDto(UserDto userDto, long userId) {
-
-        userServiceImpl.validateEmail(userDto.getEmail());
-        User user = userServiceImpl.getById(userId);
-        if (userDto.getName()!=null){
-            user.setName(userDto.getName());
-            needUpdate=true;
-        }
-        if (userDto.getEmail()!=null){
-            user.setEmail(userDto.getEmail());
-            needUpdate=true;
-        }
-        return user;
-    }
 }

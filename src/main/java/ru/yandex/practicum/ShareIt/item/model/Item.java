@@ -1,9 +1,10 @@
 package ru.yandex.practicum.ShareIt.item.model;
 
-
 import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.NonFinal;
+import ru.yandex.practicum.ShareIt.request.ItemRequest;
+import ru.yandex.practicum.ShareIt.user.model.User;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -30,9 +31,9 @@ public class Item {
     Boolean available;
     @NonFinal
     @Setter
-    long ownerId;
+    User owner;
     @NonFinal
     @Setter
-    long requestId;
+    ItemRequest ItemRequest;
 
 }

@@ -30,13 +30,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User create(User user) {
-        validateEmail(user.getEmail());
+
+        validateEmailExists(user.getEmail());
         return userStorage.create(user);
     }
 
     @Override
     public User update(User user) {
-        getById(user.getId());
+
         return userStorage.update(user);
     }
 
@@ -48,7 +49,8 @@ public class UserServiceImpl implements UserService {
         userStorage.delete(id);
     }
 
-    public void validateEmail(String email) {
+    @Override
+    public void validateEmailExists(String email) {
         boolean emailAlreadyExists = userStorage.getAll()
                 .stream()
                 .map(User::getEmail).anyMatch(s -> s.equals(email));
