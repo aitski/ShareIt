@@ -1,64 +1,56 @@
 package ru.yandex.practicum.ShareIt.user.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.ShareIt.exception.ConflictException;
 import ru.yandex.practicum.ShareIt.exception.NotFoundException;
+import ru.yandex.practicum.ShareIt.item.model.Comment;
 import ru.yandex.practicum.ShareIt.user.model.User;
-import ru.yandex.practicum.ShareIt.user.storage.UserStorage;
+import ru.yandex.practicum.ShareIt.user.storage.UserRepository;
+
 
 import java.util.List;
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    private final UserStorage userStorage;
-
-    public UserServiceImpl(UserStorage userStorage) {
-        this.userStorage = userStorage;
-    }
+    private final UserRepository userRepository;
 
     @Override
     public List<User> getAll() {
-        return userStorage.getAll();
+        List<User> list = userRepository.findAll();
+        log.debug("list of users returned: {}", list);
+        return list;
     }
 
     @Override
     public User getById(long id) {
-        return userStorage.findById(id).orElseThrow(() -> new NotFoundException
+        return userRepository.findById(id).orElseThrow(() -> new NotFoundException
                 ("User with id=" + id + " not found"));
     }
 
     @Override
     public User create(User user) {
 
-        validateEmailExists(user.getEmail());
-        return userStorage.create(user);
+        User userNew = userRepository.save(user);
+        log.debug("user created: {}", userNew);
+        return userNew;
     }
 
     @Override
     public User update(User user) {
 
-        return userStorage.update(user);
+        User userNew = userRepository.save(user);
+        log.debug("user updated: {}", userNew);
+        return userNew;
     }
 
     @Override
     public void delete(long id) {
-        userStorage.findById(id)
-                .orElseThrow(() -> new NotFoundException
-                        ("User with id=" + id + " not found"));
-        userStorage.delete(id);
+        userRepository.delete(getById(id));
+        log.debug("user with id {} deleted",id);
     }
-
-    @Override
-    public void validateEmailExists(String email) {
-        boolean emailAlreadyExists = userStorage.getAll()
-                .stream()
-                .map(User::getEmail).anyMatch(s -> s.equals(email));
-
-        if (emailAlreadyExists) {
-            throw new ConflictException
-                    ("User with email =" + email + " already exists");
-        }
-    }
-
 }

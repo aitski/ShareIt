@@ -1,28 +1,25 @@
 package ru.yandex.practicum.ShareIt.item.model;
 
-
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.Setter;
-import lombok.Value;
-import lombok.experimental.NonFinal;
-import ru.yandex.practicum.ShareIt.request.ItemRequest;
-import ru.yandex.practicum.ShareIt.user.model.User;
+import lombok.ToString;
+import ru.yandex.practicum.ShareIt.booking.model.Booking;
+import ru.yandex.practicum.ShareIt.booking.model.BookingItemDto;
 
-import javax.validation.constraints.Size;
+import java.util.List;
 
-@Value
+@Getter
+@Setter
+@ToString
+@AllArgsConstructor
 public class ItemDto {
-    @NonFinal
-    @Setter
+
     long id;
-    @NonFinal
-    @Setter
-    @Size(max = 50)
     String name;
-    @NonFinal
-    @Setter
-    @Size(max = 3000)
     String description;
-    @NonFinal
-    @Setter
     Boolean available;
+    BookingItemDto lastBooking;
+    BookingItemDto nextBooking;
+    List<CommentDto> comments;
 }

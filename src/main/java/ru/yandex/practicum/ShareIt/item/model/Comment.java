@@ -1,54 +1,46 @@
 package ru.yandex.practicum.ShareIt.item.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
-import ru.yandex.practicum.ShareIt.request.Request;
 import ru.yandex.practicum.ShareIt.user.model.User;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Setter
 @ToString
 
-@Table(name = "items", schema = "public")
-public class Item {
+@Table(name = "comments", schema = "public")
+public class Comment {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "item_id")
+    @Column(name = "comment_id")
     Long id;
 
-    @NotBlank
-    @Size(max = 255)
-    String name;
-
-    @NotBlank
     @Size(max = 3000)
-    String description;
-
-    @NotNull
-    Boolean available;
+    String text;
 
     @ManyToOne
-    @JoinColumn(name = "owner")
-    User owner;
+    @JoinColumn(name = "item_id")
+    Item item;
 
     @ManyToOne
-    @JoinColumn(name = "request")
-    Request request;
+    @JoinColumn(name = "author_id")
+    User author;
+
+    LocalDateTime created;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Item)) return false;
-        return id != null && id.equals(((Item) o).getId());
+        if (!(o instanceof Comment)) return false;
+        return id != null && id.equals(((Comment) o).getId());
     }
 
     @Override
