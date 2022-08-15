@@ -22,50 +22,50 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByBooker_IdAndStatus(Long bookerId, Status status, Sort sort);
 
     @Query(value = "select * from bookings b " +
-            "where b.item_id in " +
-            "(select distinct i.item_id from items i where i.owner = ?) " +
-            "order by end_date desc",
+            "left join items i on b.ITEM_ID = i.ITEM_ID " +
+            "where i.owner = ? " +
+            "order by b.end_date desc",
             nativeQuery = true)
     List<Booking> findByOwner(Long ownerId);
 
     @Query(value = "select * from bookings b " +
-            "where b.item_id in " +
-            "(select distinct i.item_id from items i where i.owner = ?) " +
-            "and end_date < current_timestamp() " +
-            "order by end_date desc",
+            "left join items i on b.ITEM_ID = i.ITEM_ID " +
+            "where i.owner = ? " +
+            "and b.end_date < current_timestamp() " +
+            "order by b.end_date desc",
             nativeQuery = true)
     List<Booking> findByOwnerPast(Long ownerId);
 
     @Query(value = "select * from bookings b " +
-            "where b.item_id in " +
-            "(select distinct i.item_id from items i where i.owner = ?) " +
-            "and start_date < current_timestamp() " +
-            "and end_date > current_timestamp() " +
-            "order by end_date desc",
+            "left join items i on b.ITEM_ID = i.ITEM_ID " +
+            "where i.owner = ? " +
+            "and b.start_date < current_timestamp() " +
+            "and b.end_date > current_timestamp() " +
+            "order by b.end_date desc",
             nativeQuery = true)
     List<Booking> findByOwnerCurrent(Long ownerId);
 
     @Query(value = "select * from bookings b " +
-            "where b.item_id in " +
-            "(select distinct i.item_id from items i where i.owner = ?) " +
-            "and START_DATE > current_timestamp() " +
-            "order by end_date desc",
+            "left join items i on b.ITEM_ID = i.ITEM_ID " +
+            "where i.owner = ? " +
+            "and b.START_DATE > current_timestamp() " +
+            "order by b.end_date desc",
             nativeQuery = true)
     List<Booking> findByOwnerFuture(Long ownerId);
 
     @Query(value = "select * from bookings b " +
-            "where b.item_id in " +
-            "(select distinct i.item_id from items i where i.owner = ?) " +
+            "left join items i on b.ITEM_ID = i.ITEM_ID " +
+            "where i.owner = ? " +
             "and b.status = 'WAITING' " +
-            "order by end_date desc",
+            "order by b.end_date desc",
             nativeQuery = true)
     List<Booking> findByOwnerWaiting(Long ownerId);
 
     @Query(value = "select * from bookings b " +
-            "where b.item_id in " +
-            "(select distinct i.item_id from items i where i.owner = ?) " +
+            "left join items i on b.ITEM_ID = i.ITEM_ID " +
+            "where i.owner = ? " +
             "and b.status = 'REJECTED' " +
-            "order by end_date desc",
+            "order by b.end_date desc",
             nativeQuery = true)
     List<Booking> findByOwnerRejected(Long ownerId);
 

@@ -16,7 +16,5 @@ public class BookingDTO {
     LocalDateTime start;
     LocalDateTime end;
     Long itemId;
-    User booker;
-    Status status;
 
 }

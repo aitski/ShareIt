@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import ru.yandex.practicum.ShareIt.booking.model.Booking;
-import ru.yandex.practicum.ShareIt.booking.model.BookingItemDto;
 
 import java.util.List;
 
@@ -19,7 +18,17 @@ public class ItemDto {
     String name;
     String description;
     Boolean available;
-    BookingItemDto lastBooking;
-    BookingItemDto nextBooking;
+    Booking lastBooking;
+    Booking nextBooking;
+
+    @Getter
+    @Setter
+    @ToString
+    @AllArgsConstructor
+    public static class Booking {
+        long id;
+        long bookerId;
+    }
+
     List<CommentDto> comments;
 }
