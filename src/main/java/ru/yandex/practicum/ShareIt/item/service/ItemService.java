@@ -1,5 +1,6 @@
 package ru.yandex.practicum.ShareIt.item.service;
 
+import ru.yandex.practicum.ShareIt.item.model.Comment;
 import ru.yandex.practicum.ShareIt.item.model.Item;
 
 import java.util.List;
@@ -12,9 +13,10 @@ public interface ItemService {
 
     Item create(Item item, long ownerId);
 
+    Comment createComment (Comment comment);
+
     Item update(Item item);
 
     List<Item> search(String text);
 
-    void validateOwnership(long itemOwnerId, long userId);
 }

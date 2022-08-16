@@ -17,7 +17,6 @@ public class UserController {
 
     private final UserService userService;
     private final UserMapper userMapper;
-    boolean needUpdate = false;
 
     @GetMapping
     public List<UserDto> users() {
@@ -42,7 +41,6 @@ public class UserController {
                        @PathVariable long userId) {
 
         User user = userService.getById(userId);
-        userService.validateEmailExists(userDto.getEmail());
         return userService.update(userMapper.convertFromDto(user,userDto));
     }
 
