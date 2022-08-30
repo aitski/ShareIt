@@ -6,7 +6,6 @@ import lombok.ToString;
 import ru.yandex.practicum.ShareIt.user.model.User;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 

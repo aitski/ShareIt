@@ -1,5 +1,7 @@
 package ru.yandex.practicum.ShareIt.booking;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,63 +13,39 @@ import java.util.List;
 import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-    List<Booking> findByBooker_Id(Long bookerId, Sort sort);
+    Page<Booking> findByBooker_Id(Long bookerId, Pageable pageable);
 
-    List<Booking> findByBooker_IdAndEndIsBefore(Long bookerId, LocalDateTime end, Sort sort);
+    Page<Booking> findByBooker_IdAndEndIsBefore(Long bookerId, LocalDateTime end, Pageable pageable);
 
-    List<Booking> findByBooker_IdAndStartIsBeforeAndEndIsAfter(Long bookerId, LocalDateTime start, LocalDateTime end, Sort sort);
+    Page<Booking> findByBooker_IdAndStartIsBeforeAndEndIsAfter(Long bookerId, LocalDateTime start, LocalDateTime end, Pageable pageable);
 
-    List<Booking> findByBooker_IdAndStartIsAfter(Long bookerId, LocalDateTime start, Sort sort);
+    Page<Booking> findByBooker_IdAndStartIsAfter(Long bookerId, LocalDateTime start, Pageable pageable);
 
-    List<Booking> findByBooker_IdAndStatus(Long bookerId, Status status, Sort sort);
+    Page<Booking> findByBooker_IdAndStatus(Long bookerId, Status status, Pageable pageable);
 
-    @Query(value = "select * from bookings b " +
-            "left join items i on b.ITEM_ID = i.ITEM_ID " +
-            "where i.owner = ? " +
-            "order by b.end_date desc",
-            nativeQuery = true)
-    List<Booking> findByOwner(Long ownerId);
+    @Query(value = "select b from Booking b join b.item i on i.owner.id = ?1")
+    Page<Booking> findByOwner(Long ownerId, Pageable pageable);
 
-    @Query(value = "select * from bookings b " +
-            "left join items i on b.ITEM_ID = i.ITEM_ID " +
-            "where i.owner = ? " +
-            "and b.end_date < current_timestamp() " +
-            "order by b.end_date desc",
-            nativeQuery = true)
-    List<Booking> findByOwnerPast(Long ownerId);
+    @Query(value = "select b from Booking b join b.item i on i.owner.id = ?1 " +
+            "and b.end < current_timestamp() ")
+    Page<Booking> findByOwnerPast(Long ownerId, Pageable pageable);
 
-    @Query(value = "select * from bookings b " +
-            "left join items i on b.ITEM_ID = i.ITEM_ID " +
-            "where i.owner = ? " +
-            "and b.start_date < current_timestamp() " +
-            "and b.end_date > current_timestamp() " +
-            "order by b.end_date desc",
-            nativeQuery = true)
-    List<Booking> findByOwnerCurrent(Long ownerId);
+    @Query(value = "select b from Booking b join b.item i on i.owner.id = ?1 " +
+            "and b.start < current_timestamp() " +
+            "and b.end > current_timestamp() ")
+    Page<Booking> findByOwnerCurrent(Long ownerId, Pageable pageable);
 
-    @Query(value = "select * from bookings b " +
-            "left join items i on b.ITEM_ID = i.ITEM_ID " +
-            "where i.owner = ? " +
-            "and b.START_DATE > current_timestamp() " +
-            "order by b.end_date desc",
-            nativeQuery = true)
-    List<Booking> findByOwnerFuture(Long ownerId);
+    @Query(value = "select b from Booking b join b.item i on i.owner.id = ?1 " +
+            "and b.start > current_timestamp()")
+    Page<Booking> findByOwnerFuture(Long ownerId, Pageable pageable);
 
-    @Query(value = "select * from bookings b " +
-            "left join items i on b.ITEM_ID = i.ITEM_ID " +
-            "where i.owner = ? " +
-            "and b.status = 'WAITING' " +
-            "order by b.end_date desc",
-            nativeQuery = true)
-    List<Booking> findByOwnerWaiting(Long ownerId);
+    @Query(value = "select b from Booking b join b.item i on i.owner.id = ?1 " +
+            "and b.status = 'WAITING' ")
+    Page<Booking> findByOwnerWaiting(Long ownerId, Pageable pageable);
 
-    @Query(value = "select * from bookings b " +
-            "left join items i on b.ITEM_ID = i.ITEM_ID " +
-            "where i.owner = ? " +
-            "and b.status = 'REJECTED' " +
-            "order by b.end_date desc",
-            nativeQuery = true)
-    List<Booking> findByOwnerRejected(Long ownerId);
+    @Query(value = "select b from Booking b join b.item i on i.owner.id = ?1 " +
+            "and b.status = 'REJECTED' ")
+    Page<Booking> findByOwnerRejected(Long ownerId, Pageable pageable);
 
     Optional<Booking> findFirstByItem_IdAndStartIsAfter(Long itemId, LocalDateTime start);
 

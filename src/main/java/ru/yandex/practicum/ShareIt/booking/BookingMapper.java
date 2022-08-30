@@ -4,16 +4,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.ShareIt.booking.model.Booking;
-import ru.yandex.practicum.ShareIt.booking.model.BookingDTO;
+import ru.yandex.practicum.ShareIt.booking.model.BookingDto;
 import ru.yandex.practicum.ShareIt.booking.model.Status;
-import ru.yandex.practicum.ShareIt.exception.NotFoundException;
-import ru.yandex.practicum.ShareIt.exception.ValidationException;
+import ru.yandex.practicum.ShareIt.exception.exceptions.ValidationException;
 import ru.yandex.practicum.ShareIt.item.model.Item;
-import ru.yandex.practicum.ShareIt.item.storage.ItemRepository;
+import ru.yandex.practicum.ShareIt.item.service.ItemService;
 import ru.yandex.practicum.ShareIt.user.model.User;
-import ru.yandex.practicum.ShareIt.user.storage.UserRepository;
+import ru.yandex.practicum.ShareIt.user.service.UserService;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -21,17 +19,13 @@ import java.time.LocalDateTime;
 @Slf4j
 public class BookingMapper {
 
-    private final ItemRepository itemRepository;
-    private final UserRepository userRepository;
+    private final ItemService itemService;
+    private final UserService userService;
 
-    public Booking convertFromDto(BookingDTO bookingDTO, Long userId) {
+    public Booking convertFromDto(BookingDto bookingDTO, Long userId) {
 
-        Item item = itemRepository.findById(bookingDTO.getItemId())
-                .orElseThrow(() -> new NotFoundException
-                        ("Item with id=" + bookingDTO.getItemId() + " not found"));
-        User booker = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException
-                        ("Item with id=" + userId + " not found"));
+        User booker = userService.getById(userId);
+        Item item = itemService.getById(bookingDTO.getItemId());
 
         Booking booking = new Booking();
         booking.setItem(item);

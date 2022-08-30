@@ -4,8 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.ShareIt.exception.NotFoundException;
-import ru.yandex.practicum.ShareIt.item.model.Comment;
+import ru.yandex.practicum.ShareIt.exception.exceptions.NotFoundException;
 import ru.yandex.practicum.ShareIt.user.model.User;
 import ru.yandex.practicum.ShareIt.user.storage.UserRepository;
 
@@ -28,8 +27,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getById(long id) {
-        return userRepository.findById(id).orElseThrow(() -> new NotFoundException
-                ("User with id=" + id + " not found"));
+
+        User user = userRepository.findById(id).orElseThrow
+                (() -> {
+                    log.error("User with id {} not found", id);
+                    return new NotFoundException();
+                });
+        log.debug("User returned {}",user);
+        return user;
     }
 
     @Override
@@ -51,6 +56,6 @@ public class UserServiceImpl implements UserService {
     @Override
     public void delete(long id) {
         userRepository.delete(getById(id));
-        log.debug("user with id {} deleted",id);
+        log.debug("user with id {} deleted", id);
     }
 }

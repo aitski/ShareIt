@@ -2,19 +2,19 @@ package ru.yandex.practicum.ShareIt.booking.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.ShareIt.booking.BookingRepository;
 import ru.yandex.practicum.ShareIt.booking.model.Booking;
 import ru.yandex.practicum.ShareIt.booking.model.State;
 import ru.yandex.practicum.ShareIt.booking.model.Status;
-import ru.yandex.practicum.ShareIt.exception.NotFoundException;
 
-import ru.yandex.practicum.ShareIt.exception.ValidationException;
+import ru.yandex.practicum.ShareIt.exception.exceptions.*;
 import ru.yandex.practicum.ShareIt.item.model.Item;
-import ru.yandex.practicum.ShareIt.item.storage.ItemRepository;
 import ru.yandex.practicum.ShareIt.user.model.User;
-import ru.yandex.practicum.ShareIt.user.storage.UserRepository;
+import ru.yandex.practicum.ShareIt.user.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -24,114 +24,133 @@ import java.util.*;
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
-    private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
-    private final ItemRepository itemRepository;
+    private final UserService userService;
 
     @Override
-    public List<Booking> getAll(String state, long userId) {
+    public List<Booking> getAll(String state, long userId, int from, int size) {
+        //validate userId
+        userService.getById(userId);
+        List<Booking> list = new ArrayList<>();
 
         if (Arrays.stream(State.values()).noneMatch(e -> e.name().equals(state))) {
-            ValidationException e =  new ValidationException
-                    ("Unknown state: "+state);
+
+            StateException e = new StateException("state", state);
             log.error(e.getMessage());
             throw e;
         }
 
-        userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException
-                        ("Item with id=" + userId + " not found"));
-
-        List<Booking> list = new ArrayList<>();
-        State stateEnum = State.valueOf(state);
-        Sort sort = Sort.by(Sort.Direction.DESC, "end");
-
-        switch (stateEnum) {
-
-            case ALL:
-                list = bookingRepository.findByBooker_Id(userId, sort);
-                break;
-            case PAST:
-                list = bookingRepository.findByBooker_IdAndEndIsBefore(userId, LocalDateTime.now(), sort);
-                break;
-            case CURRENT:
-                list = bookingRepository.findByBooker_IdAndStartIsBeforeAndEndIsAfter(userId, LocalDateTime.now(), LocalDateTime.now(), sort);
-                break;
-            case FUTURE:
-                list = bookingRepository.findByBooker_IdAndStartIsAfter(userId, LocalDateTime.now(), sort);
-                break;
-            case WAITING:
-                list = bookingRepository.findByBooker_IdAndStatus(userId, Status.WAITING, sort);
-                break;
-            case REJECTED:
-                list = bookingRepository.findByBooker_IdAndStatus(userId, Status.REJECTED, sort);
-                break;
-        }
-        log.debug("list of bookings with state {} returned: {}", state, list);
-        return list;
-    }
-
-    public List<Booking> getAllByOwner(String state, long userId) {
-
-        if (Arrays.stream(State.values()).noneMatch(e -> e.name().equals(state))) {
-
-            ValidationException e = new ValidationException("Unknown state: " + state);
+        if (from < 0 || size <= 0) {
+            ValidationException e = new ValidationException(
+                    "from or size param is incorrect"
+            );
             log.error(e.getMessage());
             throw e;
         }
 
-        userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException
-                        ("Item with id=" + userId + " not found"));
-
-        List<Booking> list = new ArrayList<>();
         State stateEnum = State.valueOf(state);
+        Pageable pageRequest = PageRequest.of(from - 1, size, Sort.by(Sort.Direction.DESC, "end"));
 
         switch (stateEnum) {
 
             case ALL:
-                list = bookingRepository.findByOwner(userId);
+                list = bookingRepository.findByBooker_Id(userId, pageRequest).getContent();
                 break;
             case PAST:
-                list = bookingRepository.findByOwnerPast(userId);
+                list = bookingRepository.findByBooker_IdAndEndIsBefore(userId, LocalDateTime.now(), pageRequest).getContent();
                 break;
             case CURRENT:
-                list = bookingRepository.findByOwnerCurrent(userId);
+                list = bookingRepository.findByBooker_IdAndStartIsBeforeAndEndIsAfter(userId, LocalDateTime.now(), LocalDateTime.now(), pageRequest).getContent();
                 break;
             case FUTURE:
-                list = bookingRepository.findByOwnerFuture(userId);
+                list = bookingRepository.findByBooker_IdAndStartIsAfter(userId, LocalDateTime.now(), pageRequest).getContent();
                 break;
             case WAITING:
-                list = bookingRepository.findByOwnerWaiting(userId);
+                list = bookingRepository.findByBooker_IdAndStatus(userId, Status.WAITING, pageRequest).getContent();
                 break;
             case REJECTED:
-                list = bookingRepository.findByOwnerRejected(userId);
+                list = bookingRepository.findByBooker_IdAndStatus(userId, Status.REJECTED, pageRequest).getContent();
                 break;
         }
-        log.debug("list of bookings with state {} for the owner {} returned: {}", state, userId, list);
+
+        log.debug("list of bookings with state {} from {} size {} returned: {}", state, from, size, list);
+        return list;
+    }
+
+    public List<Booking> getAllByOwner(String state, long userId, int from, int size) {
+
+        if (Arrays.stream(State.values()).noneMatch(e -> e.name().equals(state))) {
+
+            StateException e = new StateException("state", state);
+            log.error(e.getMessage());
+            throw e;
+        }
+
+        //validate userId
+        userService.getById(userId);
+
+        if (from < 0 || size <= 0) {
+            ValidationException e = new ValidationException(
+                    "from or size param is incorrect"
+            );
+            log.error(e.getMessage());
+            throw e;
+        }
+
+        List<Booking> list = new ArrayList<>();
+        State stateEnum = State.valueOf(state);
+        Pageable pageRequest = PageRequest.of(from, size, Sort.by(Sort.Direction.DESC, "end"));
+
+        switch (stateEnum) {
+
+            case ALL:
+                list = bookingRepository.findByOwner(userId, pageRequest).getContent();
+                break;
+            case PAST:
+                list = bookingRepository.findByOwnerPast(userId, pageRequest).getContent();
+                break;
+            case CURRENT:
+                list = bookingRepository.findByOwnerCurrent(userId, pageRequest).getContent();
+                break;
+            case FUTURE:
+                list = bookingRepository.findByOwnerFuture(userId, pageRequest).getContent();
+                break;
+            case WAITING:
+                list = bookingRepository.findByOwnerWaiting(userId, pageRequest).getContent();
+                break;
+            case REJECTED:
+                list = bookingRepository.findByOwnerRejected(userId, pageRequest).getContent();
+                break;
+        }
+        log.debug("list of bookings with state {}  from {} size {} for the owner {} returned: {}", state, from, size, userId, list);
         return list;
 
     }
-
 
     @Override
     public Booking getById(long bookingId, long userId) {
 
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new NotFoundException
-                        ("Item with id=" + bookingId + " not found"));
+        //validate userId
+        userService.getById(userId);
 
-        User booker = userRepository.findById(booking.getBooker().getId()).get();
-        Item item = itemRepository.findById(booking.getItem().getId()).get();
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow
+                (() -> {
+                    log.error("Booking with id {} not found", bookingId);
+                    return new NotFoundException();
+                });
 
-        if (!(item.getOwner().getId() == userId
-                || booker.getId() == userId)) {
-            NotFoundException e = new NotFoundException
-                    ("Item does not belong to user or not booked by user");
+        //A booking can be returned only to the booker or the item owner
+        User booker = booking.getBooker();
+        User owner = booking.getItem().getOwner();
+
+        if (!owner.getId().equals(userId)
+                && !booker.getId().equals(userId)) {
+            OwnershipException e = new OwnershipException("Item", userId);
             log.error(e.getMessage());
             throw e;
         }
 
+        log.debug("Booking returned {}", booking);
         return booking;
     }
 
@@ -145,14 +164,13 @@ public class BookingServiceImpl implements BookingService {
             throw e;
         }
 
-        if (itemRepository.findAll()
-                .stream().anyMatch
-                        (i -> i.getId().equals(booking.getItem().getId())
-                                && i.getOwner().getId().equals(booking.getBooker().getId())
-                        )) {
-            NotFoundException e = new NotFoundException
-                    ("Owner " + booking.getBooker().getId() + " and item " + booking.getItem().getId() + " already exist in booking");
-            log.error(e.getMessage());
+        Item item = booking.getItem();
+        User booker = booking.getBooker();
+
+        if (item.getOwner().getId().equals(booker.getId())) {
+            BookingOwnedItemException e = new BookingOwnedItemException
+                    ("Ownership exception");
+            log.error("User {} cannot book his own item {}",booker.getId(),  item.getId());
             throw e;
         }
 
@@ -164,19 +182,18 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public Booking updateStatus(long bookingId, long userId, boolean approved) {
 
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new NotFoundException
-                        ("Item with id=" + bookingId + " not found"));
+        userService.getById(userId);
 
-        userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException
-                        ("Item with id=" + userId + " not found"));
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow
+                (() -> {
+                    log.error("Booking with id {} not found", bookingId);
+                    return new NotFoundException();
+                });
 
-        Item item = itemRepository.findById(booking.getItem().getId()).get();
+        Item item = booking.getItem();
 
         if (item.getOwner().getId() != userId) {
-            NotFoundException e = new NotFoundException
-                    ("Item does not belong to user");
+            OwnershipException e = new OwnershipException("Item", userId);
             log.error(e.getMessage());
             throw e;
         }
@@ -185,8 +202,8 @@ public class BookingServiceImpl implements BookingService {
                 || !approved && booking.getStatus().equals(Status.REJECTED)
         ) {
             ValidationException e = new ValidationException
-                    ("Status update not required");
-            log.error(e.getMessage());
+                    ("Validation error");
+            log.error("Status update not required");
             throw e;
         }
 
@@ -198,6 +215,5 @@ public class BookingServiceImpl implements BookingService {
         log.debug("booking updated: {}", booking);
         return bookingRepository.save(booking);
     }
-
 }
 

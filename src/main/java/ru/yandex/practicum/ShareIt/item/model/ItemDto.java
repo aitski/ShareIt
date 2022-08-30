@@ -4,8 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import ru.yandex.practicum.ShareIt.booking.model.Booking;
-
 import java.util.List;
 
 @Getter
@@ -31,4 +29,5 @@ public class ItemDto {
     }
 
     List<CommentDto> comments;
+    long requestId;
 }
