@@ -3,7 +3,6 @@ package ru.yandex.practicum.ShareIt.user.storage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.ShareIt.exception.NotFoundException;
 import ru.yandex.practicum.ShareIt.user.model.User;
 
 import java.util.*;

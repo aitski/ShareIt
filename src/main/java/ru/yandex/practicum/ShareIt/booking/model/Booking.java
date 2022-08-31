@@ -1,17 +1,12 @@
 package ru.yandex.practicum.ShareIt.booking.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import ru.yandex.practicum.ShareIt.item.model.Item;
 import ru.yandex.practicum.ShareIt.user.model.User;
 
-import javax.persistence.*;
-import javax.validation.constraints.Future;
-import javax.validation.constraints.FutureOrPresent;
-import javax.validation.constraints.Past;
-import java.time.LocalDate;
+import javax.persistence.*;;
 import java.time.LocalDateTime;
 
 @Entity

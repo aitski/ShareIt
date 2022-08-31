@@ -6,9 +6,9 @@ import java.util.List;
 
 public interface BookingService {
 
-    List<Booking> getAll(String state, long id);
+    List<Booking> getAll(String state, long id, int from, int size);
 
-    List<Booking> getAllByOwner(String state, long userId);
+    List<Booking> getAllByOwner(String state, long userId, int from, int size);
 
     Booking getById(long bookingId, long userId);
 

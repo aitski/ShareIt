@@ -1,11 +1,10 @@
 package ru.yandex.practicum.ShareIt.item.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import ru.yandex.practicum.ShareIt.request.Request;
+import ru.yandex.practicum.ShareIt.request.model.Request;
 import ru.yandex.practicum.ShareIt.user.model.User;
 
 import javax.persistence.*;

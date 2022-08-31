@@ -2,18 +2,17 @@ package ru.yandex.practicum.ShareIt.item.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.ShareIt.booking.BookingRepository;
-import ru.yandex.practicum.ShareIt.booking.model.Booking;
-import ru.yandex.practicum.ShareIt.exception.NotFoundException;
+import ru.yandex.practicum.ShareIt.exception.exceptions.NotFoundException;
+import ru.yandex.practicum.ShareIt.exception.exceptions.ValidationException;
 import ru.yandex.practicum.ShareIt.item.model.Comment;
 import ru.yandex.practicum.ShareIt.item.model.Item;
 import ru.yandex.practicum.ShareIt.item.storage.CommentRepository;
 import ru.yandex.practicum.ShareIt.item.storage.ItemRepository;
-import ru.yandex.practicum.ShareIt.item.storage.ItemStorage;
 import ru.yandex.practicum.ShareIt.user.model.User;
-import ru.yandex.practicum.ShareIt.user.storage.UserRepository;
-import ru.yandex.practicum.ShareIt.user.storage.UserStorage;
+import ru.yandex.practicum.ShareIt.user.service.UserService;
 
 import java.util.Collections;
 import java.util.List;
@@ -25,14 +24,26 @@ import java.util.stream.Collectors;
 public class ItemServiceImpl implements ItemService {
 
     private final ItemRepository itemRepository;
-    private final UserRepository userRepository;
     private final CommentRepository commentRepository;
 
-    @Override
-    public List<Item> getAll(long ownerId) {
-        validateUser(ownerId);
+    private final UserService userService;
 
-        return itemRepository.findAll()
+    @Override
+    public List<Item> getAll(long ownerId, int from, int size) {
+
+        userService.getById(ownerId);
+
+        if (from < 0 || size <= 0) {
+            ValidationException e = new ValidationException(
+                    "from or size param is incorrect"
+            );
+            log.error(e.getMessage());
+            throw e;
+        }
+
+        Pageable pageRequest = PageRequest.of(from, size);
+
+        return itemRepository.findAll(pageRequest).getContent()
                 .stream()
                 .filter(item -> item.getOwner().getId() == ownerId)
                 .collect(Collectors.toList());
@@ -40,43 +51,57 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Item getById(long id) {
-        return itemRepository.findById(id).orElseThrow(() -> new NotFoundException
-                ("Item with id=" + id + " not found"));
+
+        Item item = itemRepository.findById(id).orElseThrow
+                (() -> {
+                    log.error("Item with id {} not found", id);
+                    return new NotFoundException();
+                });
+        log.debug("Item returned {}", item);
+        return item;
     }
 
     @Override
     public Item create(Item item, long ownerId) {
-        User owner = userRepository.findById(ownerId)
-                .orElseThrow(() -> new NotFoundException
-                        ("User with id=" + ownerId + " not found"));
+        User owner = userService.getById(ownerId);
         item.setOwner(owner);
-        itemRepository.save(item);
-        log.debug("new item created: {}", item);
-        return item;
+        Item newItem = itemRepository.save(item);
+        log.debug("new item created: {}", newItem);
+        return newItem;
     }
 
-    public Comment createComment (Comment comment){
+    public Comment createComment(Comment comment) {
 
-        commentRepository.save(comment);
-        log.debug("new comment created: {}", comment);
-        return comment;
+        Comment newComment = commentRepository.save(comment);
+        log.debug("new comment created: {}", newComment);
+        return newComment;
     }
 
     @Override
     public Item update(Item item) {
 
-        validateUser(item.getOwner().getId());
         itemRepository.save(item);
         log.debug("item updated: {}", item);
         return item;
     }
 
     @Override
-    public List<Item> search(String text) {
+    public List<Item> search(String text, int from, int size) {
+
+        if (from < 0 || size <= 0) {
+            ValidationException e = new ValidationException(
+                    "from or size param is incorrect"
+            );
+            log.error(e.getMessage());
+            throw e;
+        }
+
+        Pageable pageRequest = PageRequest.of(from, size);
 
         if (!text.isBlank()) {
 
-            return itemRepository.findAll()
+            return itemRepository.findAll(pageRequest)
+                    .getContent()
                     .stream()
                     .filter(item -> item.getAvailable() &&
                             item.getDescription().toLowerCase().contains(text.toLowerCase())
@@ -86,12 +111,6 @@ public class ItemServiceImpl implements ItemService {
         return Collections.emptyList();
     }
 
-
-    private void validateUser(long userId) {
-        userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException
-                        ("User with id=" + userId + " not found"));
-    }
 }
 
 

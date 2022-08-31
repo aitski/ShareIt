@@ -24,42 +24,43 @@ public class ItemController {
     private final CommentMapper commentMapper;
 
     @GetMapping
-    public List<ItemDto> items(@RequestHeader("X-Sharer-User-Id") long userId) {
+    public List<ItemDto> items(@RequestHeader("X-Sharer-User-Id") long userId,
+                               @RequestParam(defaultValue = "0", required = false) int from,
+                               @RequestParam(defaultValue = "10", required = false) int size) {
 
-        List<ItemDto> list = itemService.getAll(userId)
+        List<ItemDto> list = itemService.getAll(userId, from, size)
                 .stream()
                 .map(item -> itemMapper.convertToDto(item, userId))
                 .collect(Collectors.toList());
 
-        log.debug("list of users returned: {}", list);
+        log.debug("list of items returned: {}", list);
         return list;
     }
 
     @GetMapping("{itemId}")
     public ItemDto getById(@PathVariable long itemId,
                            @RequestHeader("X-Sharer-User-Id") long userId) {
-        ItemDto itemDto = itemMapper.convertToDto(itemService.getById(itemId), userId);
-        log.debug("Item returned: {}", itemDto);
-        return itemDto;
 
+        Item item = itemService.getById(itemId);
+        return itemMapper.convertToDto(item, userId);
     }
 
     @PostMapping
-    public Item create(@Valid @RequestBody Item item,
-                       @RequestHeader("X-Sharer-User-Id") long ownerId) {
+    public ItemDto create(@Valid @RequestBody ItemDto itemDto,
+                          @RequestHeader("X-Sharer-User-Id") long ownerId) {
 
-        return itemService.create(item, ownerId);
+        Item item = itemService.create(itemMapper.convertFromDtoCreate(itemDto), ownerId);
+        return itemMapper.convertToDto(item, ownerId);
     }
 
     @PostMapping("{itemId}/comment")
     public CommentDto create(@Valid @RequestBody CommentDto commentDto,
-                          @RequestHeader("X-Sharer-User-Id") long userId,
-                          @PathVariable long itemId){
+                             @RequestHeader("X-Sharer-User-Id") long userId,
+                             @PathVariable long itemId) {
 
-        Comment comment = itemService.createComment(commentMapper.convertFromDto(commentDto, userId, itemId));
-        CommentDto newCommentDto = commentMapper.convertToDto(comment);
-        log.debug("Comment returned: {}", newCommentDto);
-        return newCommentDto;
+        Comment comment = itemService.createComment
+                (commentMapper.convertFromDto(commentDto, userId, itemId));
+        return commentMapper.convertToDto(comment);
     }
 
 
@@ -69,14 +70,16 @@ public class ItemController {
                        @PathVariable long itemId) {
 
         Item item = itemService.getById(itemId);
-        return itemService.update(itemMapper.convertFromDto(item, itemDto,ownerId));
+        return itemService.update(itemMapper.convertFromDtoPatch(item, itemDto, ownerId));
     }
 
     @GetMapping("search")
     public List<ItemDto> search(@RequestParam String text,
-                                @RequestHeader("X-Sharer-User-Id") long userId) {
-        return itemService.search(text).stream().map(item -> itemMapper.convertToDto(item, userId))
+                                @RequestHeader("X-Sharer-User-Id") long userId,
+                                @RequestParam(defaultValue = "0", required = false) int from,
+                                @RequestParam(defaultValue = "10", required = false) int size) {
+        return itemService.search(text, from, size).stream().map(
+                        item -> itemMapper.convertToDto(item, userId))
                 .collect(Collectors.toList());
     }
-
 }
