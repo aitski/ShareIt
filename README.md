@@ -1,4 +1,4 @@
-ShareIt project
+# ShareIt project
 
 Application ShareIt helps to share items, create requests to book them and add comments
 
